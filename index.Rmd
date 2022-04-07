@@ -1,0 +1,250 @@
+---
+title: "Disease risk scores"
+author: "Alexandros Rekkas"
+institute: "Department of Medical Informatics, EMC"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      slideNumberFormat: ""
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: 16:9
+header-includes:
+  - \newcommand\given[1][]{\:#1\vert\:}
+  - \newcommand{\indep}{\perp \!\!\! \perp}
+---
+
+```{r xaringan-panelset, echo=FALSE, message=FALSE}
+library(dagitty)
+library(ggdag)
+library(ggplot2)
+library(knitr)
+xaringanExtra::use_panelset()
+options(htmltools.dir.version = FALSE, htmltools.preserve.raw = FALSE)
+```
+
+# Observational setting
+```{r, cache=FALSE, echo=FALSE, warning=FALSE, fig.show="hold", out.width = '60%'}
+include_graphics("figures/dag1.png")
+```
+
+
+
+---
+
+# Propensity scores
+
+.panelset[
+.panel[.panel-name[Setting]
+- $Y(0), Y(1)$: Potential outcomes
+- $Y$: Observed outcome
+- $Z$: Treatment
+- $X$: Covariates
+
+<br>
+
+$$e(x) = P(Z = 1|X=x)$$
+
+<br>
+
+<br>
+
+Conditioning on PS achieves "propensity balance"
+
+\begin{equation}
+Z\perp\!\!\!\perp X | e(x)
+\end{equation}
+]
+.panel[.panel-name[Graph]
+```{r, cache=FALSE, echo=FALSE, warning=FALSE, fig.show="hold", out.width = '50%'}
+include_graphics("figures/dag2.png")
+```
+]
+]
+
+
+
+---
+
+class: center middle
+```{r, cache=FALSE, echo=FALSE, warning=FALSE, fig.show="hold", out.width = '60%'}
+include_graphics("figures/dag3.png")
+```
+
+
+---
+
+# Disease risk scores
+
+<br>
+
+<br>
+
+$$r(x) = P(Y(0)=1|X=x)$$
+
+<br>
+
+<br>
+
+Conditioning on DRS achieves "prognostic balance"
+\begin{equation}
+Y(0)\perp\!\!\!\perp X | r(x)
+\end{equation}
+
+<br>
+
+> &#9964; **Assumption**: $Y(0)\perp\!\!\!\perp Z | X$ (_No unmeasured confounders_)
+
+
+---
+
+
+# Estimation of DRS
+
+.panelset[
+.panel[.panel-name[Setting]
+Assume $Y(0)$ is binary
+
+<br>
+
+Estimate DRS from
+$$r(x)=P(Y(0)=1|X=x) = g(\beta x),$$
+where $g$ could be the inverse logit function
+
+<br>
+
+<br>
+
+> &#9964; **Problem**: $Y(0)$ is not observed for everyone
+]
+.panel[.panel-name[Control arm]
+- Fit the model only in the control arm patients for whom $Y(0)$ is observed
+- Apply derived model on the treatment arm
+
+<br>
+
+**PROS**
+- Accurate
+- Small number of assumptions
+
+<br>
+
+**CONS**
+- Can be overfitted to the control arm (rare outcomes -- early stages of new drug)
+- Overestimates benefits in high risk patients -- Underestimates on lower risk patients
+]
+.panel[.panel-name[Both arms]
+- Merge treatment and control arms
+- Predict outcome from $P(Y=1|X=x, Z=z)=g(\beta x+\gamma z)$
+- Derive patient DRS by setting $Z=0$ for everyone
+
+<br>
+
+**PROS**
+- Larger sample size means more accurate estimates
+
+<br>
+
+**CONS**
+- Strong model assumption -- Uniform treatment effect across categories of risk
+]
+]
+
+
+---
+
+
+# Evaluation
+
+.panelset[
+.panel[.panel-name[Propensity scores]
+- Evaluate propensity balance
+
+\begin{equation}
+Z\perp\!\!\!\perp X | e(x)
+\end{equation}
+
+<br>
+
+- Compare covariate distributions between treatment arms
+]
+.panel[.panel-name[Plot]
+.center[
+```{r, cache=FALSE, echo=FALSE, warning=FALSE, fig.show="hold", out.width = '44%'}
+include_graphics("figures/balance.png")
+```
+]
+]
+]
+
+
+---
+
+
+# Evaluation DRS
+
+- Evaluate prognostic balance
+
+\begin{equation}
+Y(0)\perp\!\!\!\perp X | r(x)
+\end{equation}
+
+<br>
+
+- Compare covariate distributions between $\{Y(0)=1\}$ and $\{Y(0)=0\}$ patients
+
+<br>
+
+<br>
+
+<br>
+
+> &#9964; **Issue**: $Y(0)$ is not observed for everyone
+
+
+---
+
+
+# Evaluation DRS
+
+.panelset[
+.panel[.panel-name[Common]
+- AUC
+- Calibration metrics
+- Goodness of fit metrics
+]
+.panel[.panel-name[Dry-run]
+- Estimate propensity scores $\hat{e}(x)$ in the whole population and evaluate propensity balance
+- Form _pseudo-.red[exposed]_ group by "flipping a coin" for each person in control group with probability $\hat{e}(x)$
+- Form _pseudo-unexposed_ group using the control patients not in the pseudo-exposed group
+- Model DRS in the pseudo-unexposed group
+- Estimate treatment effect by matching on stratifying on the DRS
+- Calculate "pseudo-bias" as the difference between estimated treatment effect and the _true_ null effect
+- Repeat...
+]
+]
+
+
+---
+
+
+# Discussion
+
+.panelset[
+.panel[.panel-name[Advantages]
+- Provides natural scale for the evaluation of treatment effect heterogeneity
+- Stable over time. Allows for use of historic data
+- More patients can be used in the analysis
+- In settings with rare exposure estimation of PS is challenging. Not the case for DRS
+- Less likely to be impacted by instrumental variables than PS
+]
+.panel[.panel-name[Disadvantages]
+- Accurately modeling the DRS requires additional assumptions
+- Not easily evaluated
+- Not good with rare outcomes
+- Effect estimates only generalizable to the treatment population
+]
+]

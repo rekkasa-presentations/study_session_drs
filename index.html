@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Disease risk scores</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Alexandros Rekkas" />
+    <meta name="date" content="2022-04-07" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+    <link href="libs/panelset/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset/panelset.js"></script>
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Disease risk scores
+### Alexandros Rekkas
+### Department of Medical Informatics, EMC
+### 2022-04-07
+
+---
+
+
+
+
+# Observational setting
+&lt;img src="figures/dag1.png" width="60%" /&gt;
+
+
+
+---
+
+# Propensity scores
+
+.panelset[
+.panel[.panel-name[Setting]
+- `\(Y(0), Y(1)\)`: Potential outcomes
+- `\(Y\)`: Observed outcome
+- `\(Z\)`: Treatment
+- `\(X\)`: Covariates
+
+&lt;br&gt;
+
+`$$e(x) = P(Z = 1|X=x)$$`
+
+&lt;br&gt;
+
+&lt;br&gt;
+
+Conditioning on PS achieves "propensity balance"
+
+`\begin{equation}
+Z\perp\!\!\!\perp X | e(x)
+\end{equation}`
+]
+.panel[.panel-name[Graph]
+&lt;img src="figures/dag2.png" width="50%" /&gt;
+]
+]
+
+
+
+---
+
+class: center middle
+&lt;img src="figures/dag3.png" width="60%" /&gt;
+
+
+---
+
+# Disease risk scores
+
+&lt;br&gt;
+
+&lt;br&gt;
+
+`$$r(x) = P(Y(0)=1|X=x)$$`
+
+&lt;br&gt;
+
+&lt;br&gt;
+
+Conditioning on DRS achieves "prognostic balance"
+`\begin{equation}
+Y(0)\perp\!\!\!\perp X | r(x)
+\end{equation}`
+
+&lt;br&gt;
+
+&gt; &amp;#9964; **Assumption**: `\(Y(0)\perp\!\!\!\perp Z | X\)` (_No unmeasured confounders_)
+
+
+---
+
+
+# Estimation of DRS
+
+.panelset[
+.panel[.panel-name[Setting]
+Assume `\(Y(0)\)` is binary
+
+&lt;br&gt;
+
+Estimate DRS from
+`$$r(x)=P(Y(0)=1|X=x) = g(\beta x),$$`
+where `\(g\)` could be the inverse logit function
+
+&lt;br&gt;
+
+&lt;br&gt;
+
+&gt; &amp;#9964; **Problem**: `\(Y(0)\)` is not observed for everyone
+]
+.panel[.panel-name[Control arm]
+- Fit the model only in the control arm patients for whom `\(Y(0)\)` is observed
+- Apply derived model on the treatment arm
+
+&lt;br&gt;
+
+**PROS**
+- Accurate
+- Small number of assumptions
+
+&lt;br&gt;
+
+**CONS**
+- Can be overfitted to the control arm (rare outcomes -- early stages of new drug)
+- Overestimates benefits in high risk patients -- Underestimates on lower risk patients
+]
+.panel[.panel-name[Both arms]
+- Merge treatment and control arms
+- Predict outcome from `\(P(Y=1|X=x, Z=z)=g(\beta x+\gamma z)\)`
+- Derive patient DRS by setting `\(Z=0\)` for everyone
+
+&lt;br&gt;
+
+**PROS**
+- Larger sample size means more accurate estimates
+
+&lt;br&gt;
+
+**CONS**
+- Strong model assumption -- Uniform treatment effect across categories of risk
+]
+]
+
+
+---
+
+
+# Evaluation
+
+.panelset[
+.panel[.panel-name[Propensity scores]
+- Evaluate propensity balance
+
+`\begin{equation}
+Z\perp\!\!\!\perp X | e(x)
+\end{equation}`
+
+&lt;br&gt;
+
+- Compare covariate distributions between treatment arms
+]
+.panel[.panel-name[Plot]
+.center[
+&lt;img src="figures/balance.png" width="44%" /&gt;
+]
+]
+]
+
+
+---
+
+
+# Evaluation DRS
+
+- Evaluate prognostic balance
+
+`\begin{equation}
+Y(0)\perp\!\!\!\perp X | r(x)
+\end{equation}`
+
+&lt;br&gt;
+
+- Compare covariate distributions between `\(\{Y(0)=1\}\)` and `\(\{Y(0)=0\}\)` patients
+
+&lt;br&gt;
+
+&lt;br&gt;
+
+&lt;br&gt;
+
+&gt; &amp;#9964; **Issue**: `\(Y(0)\)` is not observed for everyone
+
+
+---
+
+
+# Evaluation DRS
+
+.panelset[
+.panel[.panel-name[Common]
+- AUC
+- Calibration metrics
+- Goodness of fit metrics
+]
+.panel[.panel-name[Dry-run]
+- Estimate propensity scores `\(\hat{e}(x)\)` in the whole population and evaluate propensity balance
+- Form _pseudo-.red[exposed]_ group by "flipping a coin" for each person in control group with probability `\(\hat{e}(x)\)`
+- Form _pseudo-unexposed_ group using the control patients not in the pseudo-exposed group
+- Model DRS in the pseudo-unexposed group
+- Estimate treatment effect by matching on stratifying on the DRS
+- Calculate "pseudo-bias" as the difference between estimated treatment effect and the _true_ null effect
+- Repeat...
+]
+]
+
+
+---
+
+
+# Discussion
+
+.panelset[
+.panel[.panel-name[Advantages]
+- Provides natural scale for the evaluation of treatment effect heterogeneity
+- Stable over time. Allows for use of historic data
+- More patients can be used in the analysis
+- In settings with rare exposure estimation of PS is challenging. Not the case for DRS
+- Less likely to be impacted by instrumental variables than PS
+]
+.panel[.panel-name[Disadvantages]
+- Accurately modeling the DRS requires additional assumptions
+- Not easily evaluated
+- Not good with rare outcomes
+- Effect estimates only generalizable to the treatment population
+]
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "",
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
